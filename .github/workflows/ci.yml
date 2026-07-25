@@ -1,0 +1,50 @@
+# CI workflow for MedIntel
+
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: medintel
+          POSTGRES_PASSWORD: medintel
+          POSTGRES_DB: medintel
+        ports: ["5432:5432"]
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports: ["6333:6333"]
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          cd backend && poetry install --no-interaction --no-root
+
+      - name: Lint (black/isort/ruff)
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
+
+      - name: Run tests
+        run: |
+          cd backend && poetry run pytest -q

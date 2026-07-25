@@ -1,0 +1,52 @@
+# Python / virtualenv / compiled files
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.pyo
+*.pyd
+*.so
+*.dist-info/
+*.egg
+
+# Environment files
+.env
+.env.*
+.env.production
+.env.development
+.env.staging
+
+# Virtual environment directories
+env/
+.venv/
+venv/
+
+# Poetry lock files (if using poetry)
+poetry.lock
+
+# Node / npm
+node_modules/
+package-lock.json
+yarn.lock
+npm-debug.log
+
+# Build outputs
+build/
+dist/
+.out/
+
+# Docker
+docker-compose.override.yml
+*.log
+
+# IDE / editor
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
