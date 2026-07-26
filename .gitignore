@@ -31,8 +31,7 @@ npm-debug.log
 
 # Build outputs
 build/
-dist/
-.out/
+dist/.out/
 
 # Docker
 docker-compose.override.yml
@@ -50,3 +49,29 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# -------------------------------------------------
+# Secrets & keys – never commit real credentials
+# -------------------------------------------------
+*.key
+*.pem
+*.p12
+*.crt
+*.json
+*.cred
+.secret
+.secrets/
+
+# -------------------------------------------------
+# AI/ML data – keep private unless approved for open source
+# -------------------------------------------------
+data/
+datasets/
+
+# -------------------------------------------------
+# Personal documents – exclude from source control
+# -------------------------------------------------
+*.pdf
+*.docx
+*.xlsx
+*.pptx

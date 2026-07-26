@@ -1,12 +1,12 @@
-version: "3.9"
+# version: "3.9"  # removed obsolete version key
 
 services:
   backend:
     build:
-      context: .
+      context: ../..
       dockerfile: backend/Dockerfile
     container_name: medintel_backend
-    env_file: .env
+    env_file: ../../.env
     ports:
       - "8000:8000"
     depends_on:
@@ -14,13 +14,13 @@ services:
       - qdrant
       - redis
 
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    container_name: medintel_frontend
-    ports:
-      - "3000:80"
+  # frontend:
+  #   build:
+  #     context: ../..
+  #     dockerfile: frontend/Dockerfile
+  #   container_name: medintel_frontend
+  #   ports:
+  #     - "3000:80"  # frontend to be added after scaffold
 
   postgres:
     image: postgres:16-alpine
