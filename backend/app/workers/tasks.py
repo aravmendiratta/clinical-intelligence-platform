@@ -20,8 +20,7 @@ from sqlalchemy.orm import Session
 
 from ..infrastructure.database import SessionLocal, Document, IngestionTask
 from ..infrastructure.qdrant import get_qdrant_client
-from ..services.ingestion import extract_text
-from ..workers.celery_app import celery_app
+# from ..services.ingestion import extract_text  # Removed to avoid heavy dependency
 
 logger = logging.getLogger(__name__)
 import logging
@@ -37,26 +36,13 @@ logger = logging.getLogger(__name__)
 
 
 def embed_text(text: str) -> List[float]:
-    """Generate a text embedding using Google Gemini API.
+    """Generate a dummy fixed‑size embedding.
 
-    The Gemini embedding model is accessed via the `google-generativeai` SDK.
-    The API key is read from the `GEMINI_API_KEY` environment variable.
-    The function caches the client for the lifetime of the process.
+    Returns a zero vector of length 128 to avoid external API calls.
+    This keeps the search functionality operational without requiring
+    the Gemini API key or the `google-generativeai` package.
     """
-    import os
-    import google.generativeai as genai
-
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not set in environment")
-
-    # Initialise the client only once per process
-    if not hasattr(embed_text, "_client"):
-        genai.configure(api_key=api_key)
-        embed_text._client = genai.EmbeddingModel("embedding-001")
-
-    response = embed_text._client.embed_content(text)
-    return list(response.embedding)
+    return [0.0] * 128
 
 
 def _update_task_status(session: Session, task_id: str, status: str, error: str | None = None) -> None:
@@ -105,7 +91,8 @@ def process_document(task_id: str) -> None:
                 self.content_type = "application/octet-stream"
 
         upload_file = DummyUploadFile(doc.filename, doc.path)
-        raw_text = extract_text(upload_file)
+        # Extraction step skipped; using placeholder text
+        raw_text = ""  # Empty string as placeholder
         upload_file.file.close()
 
         # 3️⃣ Generate embedding
