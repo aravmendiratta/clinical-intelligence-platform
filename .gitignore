@@ -75,3 +75,5 @@ datasets/
 *.docx
 *.xlsx
 *.pptx
+
+infra/docker/.env
