@@ -1,64 +1,42 @@
+# backend/app/routers/search.py
+"""Semantic search endpoints using the vector store."""
+
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
 from pydantic import BaseModel
-import os
 
-from ..workers.tasks import embed_text
-from ..infrastructure.qdrant import get_qdrant_client
-from ..infrastructure.database import SessionLocal, Document
+from ..services.retrieval import retrieve_relevant_chunks
+from ..domain.models.user import User
+from ..core.deps import get_current_user
 
 router = APIRouter()
 
+
 class SearchResult(BaseModel):
-    id: int
+    chunk_id: int
+    document_id: int
     filename: str
-    content_type: str
-    snippet: Optional[str] = None
+    section_title: Optional[str] = None
+    content: str
     score: float
+
 
 @router.get("/", response_model=List[SearchResult])
 async def search(
     query: str = Query(..., description="Search query string"),
-    limit: int = Query(5, ge=1, le=20)
+    limit: int = Query(5, ge=1, le=20),
+    user: User = Depends(get_current_user),
 ):
-    # Generate embedding for the query
-    vector = embed_text(query)
-    qdrant = get_qdrant_client()
-    collection_name = "documents"
-    # Perform similarity search
-    search_result = qdrant.search(
-        collection_name=collection_name,
-        query_vector=vector,
-        limit=limit,
-    )
-    # Extract IDs and scores
-    ids_scores = [(point.id, point.score) for point in search_result]
-    ids = [int(id) for id, _ in ids_scores]
-    # Fetch document metadata from DB
-    db = SessionLocal()
-    docs = db.query(Document).filter(Document.id.in_(ids)).all()
-    doc_map = {doc.id: doc for doc in docs}
-    results = []
-    for doc_id, score in ids_scores:
-        doc = doc_map.get(int(doc_id))
-        if not doc:
-            continue
-        # Create a snippet (first 200 chars of file if exists)
-        snippet = None
-        if doc.path and os.path.isfile(doc.path):
-            try:
-                with open(doc.path, "r", encoding="utf-8") as f:
-                    snippet = f.read(200)
-            except Exception:
-                snippet = None
-        results.append(
-            SearchResult(
-                id=doc.id,
-                filename=doc.filename,
-                content_type=doc.content_type,
-                snippet=snippet,
-                score=score,
-            )
+    """Perform a semantic search across all ingested document chunks."""
+    chunks = retrieve_relevant_chunks(query=query, limit=limit)
+    return [
+        SearchResult(
+            chunk_id=c.chunk_id,
+            document_id=c.document_id,
+            filename=c.filename,
+            section_title=c.section_title,
+            content=c.content,
+            score=round(c.score, 4),
         )
-    db.close()
-    return results
+        for c in chunks
+    ]

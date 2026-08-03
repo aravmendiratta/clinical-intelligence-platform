@@ -7,10 +7,22 @@ __pycache__/
 *.so
 *.dist-info/
 *.egg
+.pytest_cache/
+
+# Databases & local vector store (Demo / offline persistence)
+*.db
+*.sqlite
+*.sqlite3
+medintel_demo.db
+test.db
+.qdrant_demo_storage/
+uploads/
+backend/uploads/
 
 # Environment files
 .env
 .env.*
+!.env.example
 .env.production
 .env.development
 .env.staging
@@ -31,11 +43,14 @@ npm-debug.log
 
 # Build outputs
 build/
-dist/.out/
+dist/
+.out/
 
 # Docker
 docker-compose.override.yml
 *.log
+.system_generated/
+.agents/
 
 # IDE / editor
 .vscode/
@@ -44,6 +59,7 @@ docker-compose.override.yml
 *.user
 *.userosscache
 *.sln.docstates
+*.swp
 
 # OS generated files
 .DS_Store
@@ -57,7 +73,6 @@ desktop.ini
 *.pem
 *.p12
 *.crt
-*.json
 *.cred
 .secret
 .secrets/
@@ -67,6 +82,7 @@ desktop.ini
 # -------------------------------------------------
 data/
 datasets/
+qdrantdata/
 
 # -------------------------------------------------
 # Personal documents – exclude from source control

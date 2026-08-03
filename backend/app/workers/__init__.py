@@ -1,3 +1,2 @@
 # backend/app/workers/__init__.py
-
-"""Package marker for Celery worker modules."""
+from .celery_app import celery_app  # noqa: F401

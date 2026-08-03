@@ -1,62 +1,23 @@
+# backend/app/services/ingestion.py
+"""Document ingestion service — saves uploaded files, creates DB records, dispatches Celery jobs."""
+
 import uuid
 import os
-import io
-from io import BytesIO
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from ..infrastructure.database import Document, IngestionTask
-# Import moved inside function to avoid circular import
-from pdfminer.high_level import extract_text as pdf_extract_text
-import docx
-from PIL import Image
-import pytesseract
+from ..domain.models.document import Document, IngestionTask
 
 
-
-def extract_text(file: UploadFile) -> str:
-    """Extract plain text from supported file types.
-    Supports PDF, DOCX, and image files (OCR). Returns empty string on failure.
-    """
-    suffix = os.path.splitext(file.filename)[1].lower()
-    # Read raw bytes once
-    raw = file.file.read()
-    # Reset file pointer for later use if needed
-    file.file.seek(0)
-    if suffix == ".pdf":
-        # pdfminer works with file path, so write to temp
-        tmp_path = os.path.join(os.getenv("TMPDIR", "/tmp"), f"{uuid.uuid4()}.pdf")
-        with open(tmp_path, "wb") as f:
-            f.write(raw)
-        try:
-            return pdf_extract_text(tmp_path) or ""
-        finally:
-            os.remove(tmp_path)
-    if suffix in {".docx", ".doc"}:
-        tmp_path = os.path.join(os.getenv("TMPDIR", "/tmp"), f"{uuid.uuid4()}.docx")
-        with open(tmp_path, "wb") as f:
-            f.write(raw)
-        try:
-            doc = docx.Document(tmp_path)
-            return "\n".join(p.text for p in doc.paragraphs)
-        finally:
-            os.remove(tmp_path)
-    if suffix in {".png", ".jpg", ".jpeg", ".tiff", ".bmp"}:
-        img = Image.open(BytesIO(raw))
-        return pytesseract.image_to_string(img)
-    # Fallback: try UTF‑8 decode
-    try:
-        return raw.decode("utf-8")
-    except UnicodeDecodeError:
-        return ""
-
-
-def enqueue_ingestion(file: UploadFile, db: Session) -> str:
+def enqueue_ingestion(file: UploadFile, db: Session, user_id=None) -> str:
     """Persist uploaded file metadata, create IngestionTask, and dispatch a Celery job.
     Returns the task UUID.
     """
     uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../uploads"))
     os.makedirs(uploads_dir, exist_ok=True)
-    file_path = os.path.join(uploads_dir, file.filename)
+
+    # Add UUID prefix to avoid filename collisions
+    safe_filename = f"{uuid.uuid4().hex[:8]}_{file.filename}"
+    file_path = os.path.join(uploads_dir, safe_filename)
     with open(file_path, "wb") as out_f:
         out_f.write(file.file.read())
 
@@ -65,6 +26,7 @@ def enqueue_ingestion(file: UploadFile, db: Session) -> str:
         filename=file.filename,
         content_type=file.content_type or "application/octet-stream",
         path=file_path,
+        uploaded_by=user_id,
     )
     db.add(doc)
     db.flush()  # get doc.id
@@ -78,7 +40,16 @@ def enqueue_ingestion(file: UploadFile, db: Session) -> str:
     db.add(ingestion_task)
     db.commit()
 
-    # Dispatch Celery job
-    from ..workers.celery_app import celery_app
-    celery_app.send_task("tasks.process_document", args=[task_id])
+    # Dispatch Celery job with inline fallback for local showcasing
+    try:
+        from ..workers.celery_app import celery_app
+        celery_app.send_task("tasks.process_document", args=[task_id])
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Celery queue unreachable ({e}). Running document processing inline.")
+        try:
+            from ..workers.tasks import process_document
+            process_document(task_id)
+        except Exception as inline_err:
+            logging.getLogger(__name__).error(f"Inline processing failed: {inline_err}")
     return task_id

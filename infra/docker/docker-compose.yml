@@ -1,4 +1,4 @@
-# version: "3.9"  # removed obsolete version key
+# Docker Compose for MedIntel Clinical Intelligence Platform
 
 services:
   backend:
@@ -7,36 +7,76 @@ services:
       dockerfile: backend/Dockerfile
     container_name: medintel_backend
     env_file: ../../.env
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://medintel:medintel@postgres:5432/medintel
+      - QDRANT_HOST=qdrant
+      - REDIS_URL=redis://redis:6379/0
+      - CORS_ORIGINS=["http://localhost:5173","http://localhost:3000","http://localhost"]
     ports:
       - "8000:8000"
     depends_on:
       - postgres
       - qdrant
       - redis
+    volumes:
+      - ../../backend:/app/backend
+    restart: unless-stopped
 
-  # frontend:
-  #   build:
-  #     context: ../..
-  #     dockerfile: frontend/Dockerfile
-  #   container_name: medintel_frontend
-  #   ports:
-  #     - "3000:80"  # frontend to be added after scaffold
+  celery_worker:
+    build:
+      context: ../..
+      dockerfile: backend/Dockerfile
+    container_name: medintel_celery
+    env_file: ../../.env
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://medintel:medintel@postgres:5432/medintel
+      - QDRANT_HOST=qdrant
+      - REDIS_URL=redis://redis:6379/0
+    command: celery -A backend.app.workers.celery_app worker --loglevel=info
+    depends_on:
+      - postgres
+      - qdrant
+      - redis
+    restart: unless-stopped
+
+  frontend:
+    build: ../../frontend
+    container_name: medintel_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
+    container_name: medintel_postgres
     environment:
       POSTGRES_USER: medintel
       POSTGRES_PASSWORD: medintel
       POSTGRES_DB: medintel
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
 
   qdrant:
     image: qdrant/qdrant:latest
+    container_name: medintel_qdrant
     ports:
       - "6333:6333"
+    volumes:
+      - qdrantdata:/qdrant/storage
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+    container_name: medintel_redis
     ports:
       - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  qdrantdata:

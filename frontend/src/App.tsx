@@ -1,16 +1,37 @@
-import React from 'react';
-import UploadForm from './components/UploadForm';
-import StatusList from './components/StatusList';
-import SearchBar from './components/SearchBar';
+// frontend/src/App.tsx
+import React, { useState } from 'react';
+import { AuthContext, useAuthProvider } from './hooks/useAuth';
+import Sidebar from './components/Sidebar';
+import DashboardPage from './pages/DashboardPage';
+import ChatPage from './pages/ChatPage';
+import UploadPage from './pages/UploadPage';
+import SearchPage from './pages/SearchPage';
+import AuditPage from './pages/AuditPage';
+
+const AppContent: React.FC = () => {
+  const [activePage, setActivePage] = useState('dashboard');
+
+  return (
+    <div style={{ display: 'flex', width: '100%', minHeight: '100vh' }}>
+      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <main style={{ flex: 1, overflow: 'auto', minHeight: '100vh' }}>
+        {activePage === 'dashboard' && <DashboardPage onNavigate={setActivePage} />}
+        {activePage === 'chat' && <ChatPage />}
+        {activePage === 'upload' && <UploadPage />}
+        {activePage === 'search' && <SearchPage />}
+        {activePage === 'audit' && <AuditPage />}
+      </main>
+    </div>
+  );
+};
 
 const App: React.FC = () => {
+  const auth = useAuthProvider();
+
   return (
-    <div className="min-h-screen flex flex-col items-center p-6 space-y-8">
-      <h1 className="text-4xl font-bold text-primary mb-4">Clinical Intelligence Platform</h1>
-      <SearchBar />
-      <UploadForm />
-      <StatusList />
-    </div>
+    <AuthContext.Provider value={auth}>
+      <AppContent />
+    </AuthContext.Provider>
   );
 };
 

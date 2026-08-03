@@ -1,45 +1,41 @@
 # backend/app/infrastructure/database.py
-"""SQLAlchemy database session management.
+"""SQLAlchemy database session management with intelligent fallback.
 
-This module creates the engine, session factory, and a dependency
-function that can be injected into FastAPI routes.
+Attempts to connect to Enterprise PostgreSQL; if offline (e.g. during local developer evaluation
+or portfolio showcasing without Docker), gracefully falls back to a self-contained SQLite relational store.
 """
 
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text, Boolean, func
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
 import os
+import logging
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy.exc import OperationalError
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://medintel:medintel@postgres/medintel")
+from ..core.config import settings
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+logger = logging.getLogger(__name__)
+
+# Intelligent Database Connection Engine
+try:
+    if "sqlite" in settings.DATABASE_URL.lower():
+        engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
+    else:
+        engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+        # Check connection availability
+        with engine.connect() as conn:
+            pass
+    logger.info("Successfully connected to primary configured database.")
+except Exception as e:
+    logger.warning(f"Primary PostgreSQL database unreachable ({e}). Falling back to local SQLite store for zero-friction demo mode.")
+    sqlite_url = "sqlite:///./medintel_demo.db"
+    engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-# -------------------------------------------------------------------
-# Domain models for Document Ingestion
-# -------------------------------------------------------------------
-class Document(Base):
-    __tablename__ = "documents"
-    id = Column(Integer, primary_key=True, index=True)
-    filename = Column(String, nullable=False)
-    content_type = Column(String, nullable=False)
-    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
-    # optional path if stored on local FS
-    path = Column(String, nullable=True)
-    # optional metadata JSON (as text)
-    extra_metadata = Column(Text, nullable=True)
 
-class IngestionTask(Base):
-    __tablename__ = "ingestion_tasks"
-    id = Column(String, primary_key=True, index=True)  # UUID string
-    document_id = Column(Integer, nullable=False)
-    status = Column(String, default="queued")  # queued, processing, completed, failed
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    error_message = Column(Text, nullable=True)
-
-def get_db() -> Session:
+def get_db():
     """FastAPI dependency that provides a DB session and ensures it
     is closed after the request.
     """
