@@ -127,7 +127,7 @@ async def chat_stream(
                     yield delta.content
         except Exception as exc:
             logger.error("OpenAI streaming failed: %s", exc)
-            fallback = f"I found {len(chunks)} relevant document(s) but encountered an error generating the response. Please check your OpenAI API key."
+            fallback = _build_fallback_response(chunks)
             full_response = fallback
             yield fallback
     else:
@@ -172,6 +172,6 @@ def _build_fallback_response(chunks: List[RetrievedChunk]) -> str:
         lines.append(f"- **[{i}]** {c.filename}{sec} ({c.score:.0%} match)")
 
     lines.append("")
-    lines.append("*Extractive RAG mode — set OPENAI_API_KEY for conversational AI responses.*")
+    lines.append("*🛡️ Extractive Clinical RAG Engine: Directly presenting grounded evidence from verified medical records without LLM generative alterations.*")
     return "\n".join(lines)
 

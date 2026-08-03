@@ -25,13 +25,17 @@ def _get_or_create_demo_user(db: Session) -> User:
         user = User(
             id=uuid.uuid4(),
             email=demo_email,
-            full_name="Dr. Demo (Reviewer)",
+            full_name="Reviewer",
             hashed_password=hash_password("demomodedisabled"),
             role=UserRole.ADMIN,
             is_superuser=True,
             is_active=True,
         )
         db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif user.full_name != "Reviewer":
+        user.full_name = "Reviewer"
         db.commit()
         db.refresh(user)
     return user

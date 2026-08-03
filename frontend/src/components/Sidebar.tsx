@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       >
         <div>
           <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-            {user?.full_name || 'Dr. Demo'}
+            {user?.full_name || 'Reviewer'}
           </div>
           <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>
             Full Access ({user?.role})

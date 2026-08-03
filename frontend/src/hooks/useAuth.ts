@@ -20,7 +20,7 @@ export interface AuthContextType {
 const DEMO_USER: User = {
   id: 'demo-reviewer-id',
   email: 'demo@medintel.ai',
-  full_name: 'Dr. Demo (Reviewer)',
+  full_name: 'Reviewer',
   role: 'admin',
   is_active: true,
   is_superuser: true,
