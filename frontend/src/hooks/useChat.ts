@@ -92,7 +92,19 @@ export function useChat() {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
-                if (data.token) {
+                if (data.citations) {
+                  const citationsStr = typeof data.citations === 'string' ? data.citations : JSON.stringify(data.citations);
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    if (updated.length > 0) {
+                      updated[updated.length - 1] = {
+                        ...updated[updated.length - 1],
+                        citations: citationsStr,
+                      };
+                    }
+                    return updated;
+                  });
+                } else if (data.token) {
                   fullContent += data.token;
                   setMessages((prev) => {
                     const updated = [...prev];

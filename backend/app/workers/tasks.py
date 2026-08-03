@@ -157,11 +157,13 @@ def process_document(task_id: str) -> None:
         # Create DB chunk records and upsert vectors
         points = []
         for i, ((content, section_title), vector) in enumerate(zip(text_chunks, embeddings)):
+            qdrant_uuid = str(uuid.uuid4())
             chunk_record = DocumentChunk(
                 document_id=doc.id,
                 chunk_index=i,
                 content=content,
                 section_title=section_title,
+                embedding_id=qdrant_uuid,
             )
             session.add(chunk_record)
             session.flush()  # get chunk_record.id
@@ -169,13 +171,15 @@ def process_document(task_id: str) -> None:
             from qdrant_client.models import PointStruct
             points.append(
                 PointStruct(
-                    id=chunk_record.id,
+                    id=qdrant_uuid,
                     vector=vector,
                     payload={
-                        "chunk_id": chunk_record.id,
-                        "document_id": doc.id,
+                        "chunk_id": str(chunk_record.id),
+                        "document_id": str(doc.id),
                         "filename": doc.filename,
-                        "section_title": section_title,
+                        "content": content,
+                        "section_title": section_title or "General Section",
+                        "chunk_index": i,
                     },
                 )
             )

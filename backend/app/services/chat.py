@@ -3,7 +3,7 @@
 
 import json
 import logging
-from typing import AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator, List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -43,15 +43,18 @@ def _build_context(chunks: List[RetrievedChunk]) -> str:
 
 
 def _build_citations(chunks: List[RetrievedChunk]) -> str:
-    """Serialize citation metadata as JSON."""
+    """Serialize rich citation and RAG retrieval telemetry as JSON."""
     cites = [
         {
             "index": i,
             "filename": c.filename,
-            "section": c.section_title,
+            "section": c.section_title or "General Clinical Context",
             "document_id": c.document_id,
             "chunk_id": c.chunk_id,
             "score": round(c.score, 3),
+            "snippet": c.content[:240] + ("..." if len(c.content) > 240 else ""),
+            "strategy": f"Medical Header Segmentation ({c.section_title})" if c.section_title else "Semantic Paragraph Segmentation",
+            "metric": "Cosine Similarity (384d Dense Vector)",
         }
         for i, c in enumerate(chunks, 1)
     ]
@@ -63,7 +66,7 @@ async def chat_stream(
     conversation_id: UUID,
     user_id: UUID,
     db: Session,
-) -> AsyncGenerator[str, None]:
+) -> AsyncGenerator[Any, None]:
     """Stream a RAG-augmented response.
 
     1. Retrieve relevant chunks.
@@ -75,6 +78,7 @@ async def chat_stream(
     chunks = retrieve_relevant_chunks(user_message, limit=5, db=db)
     context = _build_context(chunks)
     citations_json = _build_citations(chunks)
+    yield {"citations": json.loads(citations_json)}
 
     # ── Persist user message ─────────────────────────────────
     user_msg = Message(
@@ -146,23 +150,28 @@ async def chat_stream(
 def _build_fallback_response(chunks: List[RetrievedChunk]) -> str:
     """When no LLM is configured, synthesize an extractive summary from top retrieved chunks."""
     if not chunks:
-        return "⚠️ No clinical documents containing matching semantic vectors or medical keywords were found in the workspace. Please try refining your clinical terms or uploading additional patient records in the Upload tab."
+        return "No clinical documents matching your query were found. Try different clinical terms or upload more patient records in the Upload tab."
 
     top = chunks[0]
-    section_info = f" | Section: {top.section_title}" if top.section_title else ""
+    section_info = f", {top.section_title}" if top.section_title else ""
 
     lines = [
-        "### 🧬 MedIntel RAG Clinical Synthesis (Extractive Engine)",
-        "Based on real-time retrieval from your clinical repository, here are the primary verifiable findings for your inquiry:\n",
-        f"#### **Primary Clinical Excerpt (`{top.filename}`{section_info})**:",
-        f"> *\"{top.content.strip()}\"*\n",
-        "---\n",
-        "#### **📚 Verifiable Supporting Citations & Evidence Matrix:**"
+        "## 🧬 Clinical RAG Response",
+        "",
+        f"**Source:** {top.filename}{section_info}",
+        "",
+        f"> {top.content.strip()}",
+        "",
+        "---",
+        "",
+        "**📚 Citations:**",
     ]
 
     for i, c in enumerate(chunks, 1):
-        sec = f" — Section: `{c.section_title}`" if c.section_title else ""
-        lines.append(f"- **[{i}]** `{c.filename}`{sec} *(Relevance Score: {c.score:.0%})*")
+        sec = f" — {c.section_title}" if c.section_title else ""
+        lines.append(f"- **[{i}]** {c.filename}{sec} ({c.score:.0%} match)")
 
-    lines.append("\n*Note: Response synthesized via MedIntel's high-precision Extractive RAG engine. To activate generative conversational completions, configure `OPENAI_API_KEY` in your `.env` workspace.*")
+    lines.append("")
+    lines.append("*Extractive RAG mode — set OPENAI_API_KEY for conversational AI responses.*")
     return "\n".join(lines)
+

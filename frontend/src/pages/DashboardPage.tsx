@@ -102,86 +102,172 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     );
   }
 
+  const hasDocs = (data?.total_documents || 0) > 0;
+  const hasConversations = (data?.total_conversations || 0) > 0;
+
+  const steps = [
+    {
+      number: 1,
+      title: 'Upload Clinical Documents',
+      description: hasDocs
+        ? `${data?.total_documents} document${(data?.total_documents || 0) !== 1 ? 's' : ''} ready — upload more or proceed to Step 2`
+        : 'Upload PDFs, DOCX, or text files of clinical records. Demo documents are pre-loaded for you.',
+      completed: hasDocs,
+      action: () => onNavigate?.('upload'),
+      actionLabel: hasDocs ? 'Upload More' : 'Upload Documents →',
+      icon: '📄',
+    },
+    {
+      number: 2,
+      title: 'Ask Questions with AI Chat',
+      description: hasConversations
+        ? `${data?.total_conversations} conversation${(data?.total_conversations || 0) !== 1 ? 's' : ''} started — continue chatting`
+        : 'Ask natural language questions about your documents. MedIntel retrieves relevant sections and cites sources.',
+      completed: hasConversations,
+      action: () => onNavigate?.('chat'),
+      actionLabel: hasConversations ? 'Continue Chat' : 'Start Clinical Chat →',
+      icon: '💬',
+    },
+    {
+      number: 3,
+      title: 'Explore Semantic Search',
+      description: 'Search across all documents using AI-powered semantic understanding — not just keyword matching.',
+      completed: false,
+      action: () => onNavigate?.('search'),
+      actionLabel: 'Try Semantic Search →',
+      icon: '🔍',
+    },
+  ];
+
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 800, marginBottom: '0.25rem' }}>
-          Welcome, {user?.full_name || 'Dr. Demo'} 👋
+          Welcome{user?.full_name ? `, ${user.full_name}` : ''} 👋
         </h1>
         <p style={{ color: 'var(--color-text-secondary)' }}>
-          Here is an overview of your clinical intelligence workspace.
+          Your clinical intelligence workspace is ready. Follow the steps below to explore.
         </p>
       </div>
 
-      {/* Recruiter / Evaluator Quick-Launch Card */}
+      {/* Getting Started Stepper */}
       <div
         className="glass-card animate-fade-in"
         style={{
-          padding: '1.5rem',
+          padding: '1.75rem',
           marginBottom: '2rem',
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
-          boxShadow: '0 8px 32px rgba(99, 102, 241, 0.15)',
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
+          border: '1px solid rgba(99, 102, 241, 0.2)',
         }}
       >
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.25rem' }}>
           <span
             style={{
               display: 'inline-block',
               background: 'rgba(16, 185, 129, 0.2)',
               color: '#10b981',
-              padding: '0.25rem 0.625rem',
+              padding: '0.25rem 0.75rem',
               borderRadius: '999px',
               fontSize: '11px',
               fontWeight: 600,
               letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              marginBottom: '0.5rem',
+              textTransform: 'uppercase' as const,
             }}
           >
-            🚀 Live Portfolio & Evaluator Mode
+            🚀 Getting Started
           </span>
-          <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>
-            Explore AI-Powered Clinical Intelligence
-          </h2>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', maxWidth: '780px', lineHeight: 1.5 }}>
-            This workspace is pre-configured with full administrative access for quick evaluation. Test real-time RAG chat responses with automated medical section citations, test document OCR & medical header chunking, or try semantic vector searches.
-          </p>
         </div>
 
-        {onNavigate && (
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => onNavigate('chat')}
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 'var(--font-size-sm)' }}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {steps.map((step, i) => (
+            <div
+              key={step.number}
+              className="animate-fade-in"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1rem',
+                padding: '1.25rem',
+                borderRadius: 'var(--radius-lg)',
+                background: step.completed
+                  ? 'rgba(16, 185, 129, 0.06)'
+                  : 'rgba(255, 255, 255, 0.03)',
+                border: step.completed
+                  ? '1px solid rgba(16, 185, 129, 0.2)'
+                  : '1px solid var(--color-border)',
+                cursor: 'pointer',
+                transition: 'all var(--transition-base)',
+                animationDelay: `${i * 100}ms`,
+              }}
+              onClick={step.action}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = step.completed
+                  ? 'rgba(16, 185, 129, 0.1)'
+                  : 'rgba(99, 102, 241, 0.08)';
+                e.currentTarget.style.borderColor = step.completed
+                  ? 'rgba(16, 185, 129, 0.35)'
+                  : 'rgba(99, 102, 241, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = step.completed
+                  ? 'rgba(16, 185, 129, 0.06)'
+                  : 'rgba(255, 255, 255, 0.03)';
+                e.currentTarget.style.borderColor = step.completed
+                  ? 'rgba(16, 185, 129, 0.2)'
+                  : 'var(--color-border)';
+              }}
             >
-              💬 Launch Clinical AI Chat →
-            </button>
-            <button
-              onClick={() => onNavigate('upload')}
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 'var(--font-size-sm)' }}
-            >
-              📄 Upload Medical Docs
-            </button>
-            <button
-              onClick={() => onNavigate('search')}
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 'var(--font-size-sm)' }}
-            >
-              🔍 Semantic Vector Search
-            </button>
-            <button
-              onClick={() => onNavigate('audit')}
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 'var(--font-size-sm)' }}
-            >
-              📋 Compliance Logs
-            </button>
-          </div>
-        )}
+              {/* Step number / check */}
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: step.completed
+                    ? 'rgba(16, 185, 129, 0.2)'
+                    : 'rgba(99, 102, 241, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: step.completed ? '1.1rem' : '0.875rem',
+                  fontWeight: 700,
+                  color: step.completed ? '#10b981' : 'var(--color-accent-hover)',
+                  flexShrink: 0,
+                }}
+              >
+                {step.completed ? '✓' : step.number}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <span style={{ fontSize: '1rem' }}>{step.icon}</span>
+                  <span style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                    {step.title}
+                  </span>
+                  {step.completed && (
+                    <span className="badge badge-success" style={{ fontSize: '10px', padding: '0.15rem 0.4rem' }}>
+                      Done
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                  {step.description}
+                </p>
+              </div>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-accent-hover)',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap' as const,
+                  alignSelf: 'center',
+                }}
+              >
+                {step.actionLabel}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Stats Grid */}

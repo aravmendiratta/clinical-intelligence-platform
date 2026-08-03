@@ -151,13 +151,16 @@ async def send_message(
         from ..infrastructure.database import SessionLocal
         stream_db = SessionLocal()
         try:
-            async for token in chat_stream(
+            async for item in chat_stream(
                 user_message=body.content,
                 conversation_id=conv_id_obj,
                 user_id=user_id_obj,
                 db=stream_db,
             ):
-                yield {"data": json.dumps({"token": token})}
+                if isinstance(item, dict) and "citations" in item:
+                    yield {"data": json.dumps({"citations": item["citations"]})}
+                else:
+                    yield {"data": json.dumps({"token": str(item)})}
             yield {"data": json.dumps({"done": True})}
         finally:
             stream_db.close()

@@ -17,7 +17,7 @@ const AppContent: React.FC = () => {
       <main style={{ flex: 1, overflow: 'auto', minHeight: '100vh' }}>
         {activePage === 'dashboard' && <DashboardPage onNavigate={setActivePage} />}
         {activePage === 'chat' && <ChatPage />}
-        {activePage === 'upload' && <UploadPage />}
+        {activePage === 'upload' && <UploadPage onNavigate={setActivePage} />}
         {activePage === 'search' && <SearchPage />}
         {activePage === 'audit' && <AuditPage />}
       </main>
