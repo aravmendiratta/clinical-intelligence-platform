@@ -93,3 +93,10 @@ qdrantdata/
 *.pptx
 
 infra/docker/.env
+
+# -------------------------------------------------
+# AI Context & Scaffolding Documents (Keep locally for AI, hide from GitHub)
+# -------------------------------------------------
+ARCHITECTURE.md
+PROJECT_CONTEXT.md
+ROADMAP.md
