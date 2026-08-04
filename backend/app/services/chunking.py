@@ -11,29 +11,29 @@ from typing import List, Optional, Tuple
 
 # Common medical section headers (case-insensitive patterns)
 _SECTION_PATTERNS = [
-    r"(?i)^#{1,3}\s+",                          # Markdown headings
-    r"(?i)^(chief complaint|cc)\s*[:.]",
-    r"(?i)^(history of present illness|hpi)\s*[:.]",
-    r"(?i)^(past medical history|pmh)\s*[:.]",
-    r"(?i)^(medications?|current medications?)\s*[:.]",
-    r"(?i)^(allergies)\s*[:.]",
-    r"(?i)^(family history|fhx)\s*[:.]",
-    r"(?i)^(social history|shx)\s*[:.]",
-    r"(?i)^(review of systems|ros)\s*[:.]",
-    r"(?i)^(physical exam(ination)?|pe)\s*[:.]",
-    r"(?i)^(assessment( and plan)?|a/?p)\s*[:.]",
-    r"(?i)^(plan)\s*[:.]",
-    r"(?i)^(impression)\s*[:.]",
-    r"(?i)^(diagnosis|diagnoses)\s*[:.]",
-    r"(?i)^(lab(oratory)?\s*results?)\s*[:.]",
-    r"(?i)^(imaging|radiology)\s*[:.]",
-    r"(?i)^(procedure(s)?)\s*[:.]",
-    r"(?i)^(discharge (summary|instructions?))\s*[:.]",
-    r"(?i)^(follow[- ]?up)\s*[:.]",
-    r"(?i)^(vital signs?|vitals)\s*[:.]",
+    r"^#{1,3}\s+",                          # Markdown headings
+    r"^(chief complaint|cc)\s*[:.]",
+    r"^(history of present illness|hpi)\s*[:.]",
+    r"^(past medical history|pmh)\s*[:.]",
+    r"^(medications?|current medications?)\s*[:.]",
+    r"^(allergies)\s*[:.]",
+    r"^(family history|fhx)\s*[:.]",
+    r"^(social history|shx)\s*[:.]",
+    r"^(review of systems|ros)\s*[:.]",
+    r"^(physical exam(ination)?|pe)\s*[:.]",
+    r"^(assessment( and plan)?|a/?p)\s*[:.]",
+    r"^(plan)\s*[:.]",
+    r"^(impression)\s*[:.]",
+    r"^(diagnosis|diagnoses)\s*[:.]",
+    r"^(lab(oratory)?\s*results?)\s*[:.]",
+    r"^(imaging|radiology)\s*[:.]",
+    r"^(procedure(s)?)\s*[:.]",
+    r"^(discharge (summary|instructions?))\s*[:.]",
+    r"^(follow[- ]?up)\s*[:.]",
+    r"^(vital signs?|vitals)\s*[:.]",
 ]
 
-_COMBINED_PATTERN = re.compile("|".join(f"({p})" for p in _SECTION_PATTERNS))
+_COMBINED_PATTERN = re.compile("|".join(f"({p})" for p in _SECTION_PATTERNS), re.IGNORECASE)
 
 # Target chunk size in characters (roughly ~200 tokens)
 MAX_CHUNK_CHARS = 1200
