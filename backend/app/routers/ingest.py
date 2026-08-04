@@ -77,3 +77,17 @@ async def list_documents(
         }
         for d in docs
     ]
+
+
+@router.get("/seed-demo", summary="Manually trigger demo clinical data seeding")
+@router.post("/seed-demo", summary="Manually trigger demo clinical data seeding")
+async def seed_demo_data(db: Session = Depends(get_db)):
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        from ..services.seeder import seed_demo_clinical_data
+        seed_demo_clinical_data(db)
+        return {"status": "success", "message": "Demo clinical records successfully seeded into database!"}
+    except Exception as e:
+        logger.exception("Manual seed error")
+        return {"status": "error", "error": str(e)}

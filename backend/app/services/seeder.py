@@ -92,13 +92,21 @@ TREATMENT PLAN:
 
 def seed_demo_clinical_data(db: Session) -> None:
     """Check if demo documents exist; if empty, seed simulated clinical records into database and vector store."""
-    if db.query(Document).filter(Document.filename == DEMO_DOCUMENTS[0]["filename"]).first():
-        logger.info("Demo clinical dataset already present; skipping seeding.")
-        return
+    existing_doc = db.query(Document).filter(Document.filename == DEMO_DOCUMENTS[0]["filename"]).first()
+    if existing_doc:
+        if db.query(DocumentChunk).filter(DocumentChunk.document_id == existing_doc.id).count() > 0:
+            logger.info("Demo clinical dataset already present with valid chunks; skipping seeding.")
+            return
+        else:
+            logger.info("Incomplete demo seeding detected; wiping incomplete records for clean re-seed...")
+            for d_data in DEMO_DOCUMENTS:
+                db.query(Document).filter(Document.filename == d_data["filename"]).delete()
+            db.commit()
 
     logger.info("Seeding demo clinical dataset for RAG evaluation...")
     
-    author = db.query(User).filter(User.email == "demo@medintel.ai").first()
+    from ..core.deps import _get_or_create_demo_user
+    author = _get_or_create_demo_user(db)
     author_id = author.id if author else None
 
     qdrant_available = False
