@@ -26,17 +26,23 @@ from .routers.audit import router as audit_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import asyncio
+    import logging
     # Create tables on startup (use Alembic in production)
     Base.metadata.create_all(bind=engine)
-    try:
-        from .services.seeder import seed_demo_clinical_data
-        from .infrastructure.database import SessionLocal
-        db = SessionLocal()
-        seed_demo_clinical_data(db)
-        db.close()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Demo clinical data seeding error or offline: {e}")
+    
+    def _run_seeding_in_background():
+        try:
+            from .services.seeder import seed_demo_clinical_data
+            from .infrastructure.database import SessionLocal
+            db = SessionLocal()
+            seed_demo_clinical_data(db)
+            db.close()
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Demo clinical data seeding error or offline: {e}")
+
+    # Launch background thread so Uvicorn opens TCP ports immediately without timing out on cloud deployments
+    asyncio.get_event_loop().run_in_executor(None, _run_seeding_in_background)
     yield
 
 
