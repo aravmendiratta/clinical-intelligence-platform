@@ -10,7 +10,13 @@
 
 **MedIntel** is an enterprise-grade medical documentation RAG (Retrieval-Augmented Generation) intelligence system built with **Clean Architecture**. It enables healthcare professionals and evaluators to upload un-structured patient charts, pathology reports, and discharge notes, translating them into verifiable, citation-backed conversational insights to eliminate LLM hallucination in diagnostic settings.
 
--## 🌟 Recruiter & Evaluator RAG Showcase (Quick-Start Guide)
+<div align="center">
+  <img src="docs/assets/demo.gif" alt="MedIntel AI Clinical Intelligence Platform Demo" width="100%" style="border-radius: 8px;" />
+</div>
+
+---
+
+## 🌟 Recruiter & Evaluator RAG Showcase (Quick-Start Guide)
 
 To ensure evaluators, engineering hiring managers, and clinicians can experience the **advanced RAG engineering** immediately without setup friction, API key requirements, or manual uploads, MedIntel launches in **Live Portfolio & Evaluator Mode**:
 - **Zero Login Friction**: You are automatically logged in with administrative evaluation privileges (`Reviewer`).
