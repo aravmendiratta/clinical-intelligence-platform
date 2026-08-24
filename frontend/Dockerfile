@@ -26,7 +26,8 @@ RUN echo 'server { \
     location / { \
         try_files $uri $uri/ /index.html; \
     } \
-    location ~ ^/(auth|ingest|search|chat|patients|audit|health)/ { \
+    location /api/ { \
+        rewrite ^/api/(.*) /$1 break; \
         proxy_pass http://medintel_backend:8000; \
         proxy_set_header Host $host; \
         proxy_set_header X-Real-IP $remote_addr; \

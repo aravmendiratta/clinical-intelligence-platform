@@ -151,7 +151,7 @@ cd backend
 python -m venv venv
 venv\Scripts\activate      # On Windows
 pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8001 --host 127.0.0.1
 ```
 
 **Frontend Workspace:**
@@ -160,7 +160,7 @@ cd frontend
 npm install
 npm run dev
 ```
-Navigate to **`http://localhost:5173`** (or `http://localhost:3000`) to access the evaluator dashboard immediately!
+Navigate to **`http://127.0.0.1:5173`** to access the evaluator dashboard immediately!
 
 ---
 

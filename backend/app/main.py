@@ -33,6 +33,9 @@ async def lifespan(app: FastAPI):
     
     def _run_seeding_in_background():
         try:
+            import os
+            if os.environ.get("DISABLE_SEEDER") == "true":
+                return
             from .services.seeder import seed_demo_clinical_data
             from .infrastructure.database import SessionLocal
             db = SessionLocal()
